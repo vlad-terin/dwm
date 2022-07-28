@@ -3,7 +3,7 @@
 /* Constants */
 #define TERMINAL "st"
 #define TERMCLASS "St"
-#define BROWSER "/opt/wavebox.io/wavebox/wavebox-launcher"
+#define BROWSER "wavebox-launcher"
 
 /* appearance */
 static unsigned int borderpx  = 3;        /* border pixel of windows */
@@ -50,12 +50,15 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	*/
 	/* class    instance      title       	 tags mask    isfloating   isterminal  noswallow  monitor */
-	{ "Gimp",     NULL,       NULL,       	    1 << 8,       0,           0,         0,        -1 },
 	{ TERMCLASS,  NULL,       NULL,       	    0,            0,           1,         0,        -1 },
 	{ NULL,       NULL,       "Event Tester",   0,            0,           0,         1,        -1 },
 	{ TERMCLASS,      "bg",        NULL,       	    1 << 7,       0,           1,         0,        -1 },
 	{ TERMCLASS,      "spterm",    NULL,       	    SPTAG(0),     1,           1,         0,        -1 },
 	{ TERMCLASS,      "spcalc",    NULL,       	    SPTAG(1),     1,           1,         0,        -1 },
+	/* class      instance    title       tags mask     isfloating    isterminal   noswallow */
+	{ "Gimp",     NULL,       NULL,       1 << 8,       0,             0,            0,	-1, 	1},
+	{ TERMCLASS,	"dmenusearch",       NULL,       1 << 8,       0,             0,            0,	-1, 	1},
+	{ "Wavebox",  NULL,       NULL,       1 << 8,       0,             0,            0,	-1,	1},
 };
 
 /* layout(s) */
@@ -90,8 +93,8 @@ static const Layout layouts[] = {
 	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
 #define STACKKEYS(MOD,ACTION) \
-	{ MOD,	XK_k,	ACTION##stack,	{.i = INC(+1) } }, \
-	{ MOD,	XK_j,	ACTION##stack,	{.i = INC(-1) } }, \
+	{ MOD,	XK_j,	ACTION##stack,	{.i = INC(+1) } }, \
+	{ MOD,	XK_k,	ACTION##stack,	{.i = INC(-1) } }, \
 	{ MOD,  XK_v,   ACTION##stack,  {.i = 0 } }, \
 	/* { MOD, XK_grave, ACTION##stack, {.i = PREVSEL } }, \ */
 	/* { MOD, XK_a,     ACTION##stack, {.i = 1 } }, \ */
@@ -161,10 +164,12 @@ static Key keys[] = {
 	/* { MODKEY|ShiftMask,		XK_Tab,		spawn,		SHCMD("") }, */
 	{ MODKEY,			XK_q,		killclient,	{0} },
 	{ MODKEY|ShiftMask,		XK_q,		spawn,		{.v = (const char*[]){ "sysact", NULL } } },
-	{ MODKEY,			XK_w,		spawn,		{.v = (const char*[]){ BROWSER, NULL } } },
+	{ MODKEY,			XK_w,		spawn,		SHCMD("wavebox-launcher --ignore-gpu-blocklist --enable-features=VaapiVideoDecoder --disable-features=UseChromeOSDirectVideoDecoder --force-device-scale-factor=2 --start-maximized --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy") },
 	{ MODKEY|ShiftMask,		XK_w,		spawn,		{.v = (const char*[]){ TERMINAL, "-e", "sudo", "nmtui", NULL } } },
-	{ MODKEY,			XK_e,		spawn,		SHCMD(TERMINAL " -e neomutt ; pkill -RTMIN+12 dwmblocks; rmdir ~/.abook") },
-	{ MODKEY|ShiftMask,		XK_e,		spawn,		SHCMD(TERMINAL " -e abook -C ~/.config/abook/abookrc --datafile ~/.config/abook/addressbook") },
+	{ MODKEY,			XK_period,	spawn,		{.v = (const char*[]){ "dmenusearch", NULL } } },
+	{ MODKEY,			XK_comma,	spawn,		{.v = (const char*[]){ TERMINAL, "-e", "youtube-viewer", NULL } } },
+	{ MODKEY|ShiftMask,		XK_e,		spawn,		SHCMD(TERMINAL " -e neomutt ; pkill -RTMIN+12 dwmblocks; rmdir ~/.abook") },
+	/*{ MODKEY|ShiftMask,		XK_e,		spawn,		SHCMD(TERMINAL " -e abook -C ~/.config/abook/abookrc --datafile ~/.config/abook/addressbook") },*/
 	{ MODKEY,			XK_r,		spawn,		{.v = (const char*[]){ TERMINAL, "-e", "lfub", NULL } } },
 	{ MODKEY|ShiftMask,		XK_r,		spawn,		{.v = (const char*[]){ TERMINAL, "-e", "htop", NULL } } },
 	{ MODKEY,			XK_t,		setlayout,	{.v = &layouts[0]} }, /* tile */
@@ -246,7 +251,12 @@ static Key keys[] = {
 	{ MODKEY,			XK_F8,		spawn,		{.v = (const char*[]){ "mw", "-Y", NULL } } },
 	{ MODKEY,			XK_F9,		spawn,		{.v = (const char*[]){ "dmenumount", NULL } } },
 	{ MODKEY,			XK_F10,		spawn,		{.v = (const char*[]){ "dmenuumount", NULL } } },
-	{ MODKEY,			XK_F11,		spawn,		SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings --profile=low-latency --input-conf=/dev/null --title=webcam $(ls /dev/video[0,2,4,6,8] | tail -n 1)") },
+	{ MODKEY,			XK_F11,		spawn,		SHCMD("gphoto2 --capture-movie --stdout | ffmpeg -i - -vcodec libx264 -tune zerolatency -vf \"transpose=1\" -movflags faststart -preset ultrafast -f mpegts pipe:1 | mpv - --profile=low-latency --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1")},
+/* gphoto2 --capture-movie --stdout | ffmpeg -i pipe:0 -vf \"transpose=1\" -f v4l2 -video_size 1920x1080 -preset ultrafast -vcodec libx264 -tune zerolatency -b 900k -f mpegts pipe:1 | mpv - --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1
+gphoto2 --capture-movie --stdout | ffmpeg -i - -c:v libx264 -vf \"transpose=1\" -movflags faststart -preset ultrafast -qp 20 -tune zerolatency -f mjpeg pipe:1 | mpv - --no-cache --untimed --no-demuxer-thread --video-sync=audio --vd-lavc-threads=1")},
+
+
+	{ MODKEY,			XK_F11,		spawn,		SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings --profile=low-latency --input-conf=/dev/null --title=webcam $(gphoto2 --stdout --capture-movie | ffmpeg -i - -vcodec rawvideo -pix_fmt yuv420p -threads 0 -f v4l2 /dev/video0")},*/
 	{ MODKEY,			XK_F12,		spawn,		SHCMD("remaps") },
 	{ MODKEY,			XK_space,	zoom,		{0} },
 	{ MODKEY|ShiftMask,		XK_space,	togglefloating,	{0} },
